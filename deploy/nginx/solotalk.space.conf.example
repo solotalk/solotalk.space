@@ -42,10 +42,11 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Resource download endpoint: apply the coarse per-IP rate limit here.
+    # Resource and software download endpoints: apply the coarse per-IP
+    # rate limit here.
     # Requires `dl_limit` zone defined in the http block (see note above).
     # burst=20 queues short spikes; nodelay serves them immediately.
-    location ~ ^/api/resources/[0-9]+/download$ {
+    location ~ ^/api/(resources|software)/[0-9]+/download$ {
         limit_req zone=dl_limit burst=20 nodelay;
         limit_conn conn_limit 10;
 
@@ -54,12 +55,5 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    # Software installers for the Download page: static files served
-    # directly by nginx, no backend involvement.
-    location /software/ {
-        alias /var/www/solotalk/software/;
-        autoindex off;
     }
 }

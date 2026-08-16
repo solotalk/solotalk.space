@@ -11,7 +11,7 @@ from app.core.security import hash_password
 from app.db import SessionLocal
 from app.middleware.rate_limit import DownloadRateLimitMiddleware
 from app.models.user import User
-from app.routers import admin, auth, resources
+from app.routers import admin, auth, resources, software
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +57,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(auth.router)
     app.include_router(resources.router)
+    app.include_router(software.router)
     app.include_router(admin.router)
 
     @app.get("/api/health")

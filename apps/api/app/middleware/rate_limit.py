@@ -5,7 +5,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-DOWNLOAD_PATH_PATTERN = re.compile(r"^/api/resources/\d+/download$")
+DOWNLOAD_PATH_PATTERN = re.compile(r"^/api/(resources|software)/\d+/download$")
 WINDOW_SECONDS = 60
 
 

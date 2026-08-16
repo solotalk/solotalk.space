@@ -1,0 +1,19 @@
+[project]
+name = "solotalk-api"
+version = "0.1.0"
+description = "Solotalk Space backend API (FastAPI)"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlalchemy",
+    "alembic",
+    "pymysql",
+    "pydantic-settings",
+    "pyjwt",
+    "pwdlib[argon2]",
+    "python-multipart",
+]
+
+[tool.uv]
+package = false

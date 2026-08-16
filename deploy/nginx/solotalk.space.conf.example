@@ -1,0 +1,65 @@
+# Solotalk Space — nginx site configuration example.
+#
+# Copy to /etc/nginx/conf.d/solotalk.space.conf (or sites-available + symlink),
+# adjust paths, then `nginx -t && systemctl reload nginx`.
+
+# ---------------------------------------------------------------------------
+# Rate-limit zones. These directives are only valid in the `http` block —
+# move them into /etc/nginx/nginx.conf (or a file included from the http
+# context), NOT inside this server block.
+#
+#   # Coarse per-IP request rate for download endpoints (10 r/s, 10 MB zone).
+#   limit_req_zone $binary_remote_addr zone=dl_limit:10m rate=10r/s;
+#
+#   # Coarse per-IP concurrent connection limit (5 MB zone).
+#   limit_conn_zone $binary_remote_addr zone=conn_limit:5m;
+#
+# The backend applies additional fine-grained per-IP limits via application
+# middleware; nginx only provides a first, coarse layer.
+# ---------------------------------------------------------------------------
+
+server {
+    listen 80;
+    server_name solotalk.space www.solotalk.space;
+
+    # Allow large resource uploads (files up to 100 MB).
+    client_max_body_size 100m;
+
+    # Frontend: Vue 3 static build with SPA fallback for client-side routing.
+    root /var/www/solotalk/web;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # API: reverse proxy to the FastAPI backend binary on 127.0.0.1:8000.
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Resource download endpoint: apply the coarse per-IP rate limit here.
+    # Requires `dl_limit` zone defined in the http block (see note above).
+    # burst=20 queues short spikes; nodelay serves them immediately.
+    location ~ ^/api/resources/[0-9]+/download$ {
+        limit_req zone=dl_limit burst=20 nodelay;
+        limit_conn conn_limit 10;
+
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Software installers for the Download page: static files served
+    # directly by nginx, no backend involvement.
+    location /software/ {
+        alias /var/www/solotalk/software/;
+        autoindex off;
+    }
+}
